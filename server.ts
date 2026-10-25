@@ -36,6 +36,17 @@ const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 app.use(express.json({ limit: '25mb' }));
 app.use(express.urlencoded({ extended: true, limit: '25mb' }));
 
+// CORS & Preflight handling for development and production
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  next();
+});
+
 // In-Memory Database Store (Initialized from Seed Data)
 let applications: ApplicationItem[] = JSON.parse(JSON.stringify(INITIAL_APPLICATIONS));
 let complianceRules: ComplianceRule[] = JSON.parse(JSON.stringify(INITIAL_RULES));
@@ -1351,29 +1362,79 @@ app.post('/api/seed/reset', (req: Request, res: Response) => {
   }
 });
 
-// Integration with Vite Frontend
-async function startServer() {
-  const isDev = process.env.NODE_ENV !== 'production';
+// Favicon Routes (Dev & Production)
+app.get(['/favicon.ico', '/favicon.svg'], (_req: Request, res: Response) => {
+  const distSvg = path.resolve(process.cwd(), 'dist', 'favicon.svg');
+  const publicSvg = path.resolve(process.cwd(), 'public', 'favicon.svg');
+  if (fs.existsSync(distSvg)) {
+    res.type('image/svg+xml');
+    return res.sendFile(distSvg);
+  }
+  if (fs.existsSync(publicSvg)) {
+    res.type('image/svg+xml');
+    return res.sendFile(publicSvg);
+  }
+  res.status(204).end();
+});
 
-  if (isDev) {
-    // In dev mode: Express is a pure API server on API_PORT (default 3001).
-    // The Vite dev server runs separately on port 3000 with a proxy to /api → Express.
+// Explicit API 404 handler - prevents API routes from ever returning HTML index.html
+app.all('/api/*', (req: Request, res: Response) => {
+  res.status(404).json({
+    success: false,
+    error: `API route not found: ${req.method} ${req.originalUrl}`,
+  });
+});
+
+// Global API error handler
+app.use((err: any, req: Request, res: Response, next: any) => {
+  console.error('[PRAMAN Server Error]:', err);
+  if (req.path.startsWith('/api') || req.xhr) {
+    return res.status(err.status || 500).json({
+      success: false,
+      error: err.message || 'Internal Regulatory Server Error',
+    });
+  }
+  next(err);
+});
+
+// Server Initialization
+async function startServer() {
+  const isProd =
+    process.env.NODE_ENV === 'production' ||
+    process.argv.includes('--production') ||
+    process.argv.includes('--prod');
+
+  if (!isProd) {
+    // In dev mode: Express runs as a pure API server on port 3001
+    // Vite dev server runs on port 3000 with a proxy for /api -> Express
     const API_PORT = process.env.API_PORT ? parseInt(process.env.API_PORT, 10) : 3001;
     app.listen(API_PORT, '0.0.0.0', () => {
       console.log(`PRAMAN API Server (Express) running on http://0.0.0.0:${API_PORT}`);
-      console.log(`Frontend (Vite) should be started with: npx vite --port 3000`);
+      console.log(`Frontend (Vite) runs separately on http://localhost:3000`);
     });
   } else {
-    // In production: serve built React app and handle API from same process.
+    // In production: Express serves both the built frontend (dist) and all APIs on PORT (default 3000)
     const distPath = path.resolve(process.cwd(), 'dist');
+    const publicPath = path.resolve(process.cwd(), 'public');
+
+    if (fs.existsSync(publicPath)) {
+      app.use(express.static(publicPath));
+    }
+
     if (fs.existsSync(distPath)) {
       app.use(express.static(distPath));
       app.get('*', (_req: Request, res: Response) => {
         res.sendFile(path.resolve(distPath, 'index.html'));
       });
+    } else {
+      console.warn('⚠️ WARNING: "dist" folder not found. Please run "npm run build" to compile production frontend.');
+      app.get('/', (_req: Request, res: Response) => {
+        res.status(503).send('PRAMAN Regulatory Server is running, but production frontend has not been compiled yet. Run "npm run build".');
+      });
     }
+
     app.listen(PORT, '0.0.0.0', () => {
-      console.log(`PRAMAN Production Server running on http://0.0.0.0:${PORT}`);
+      console.log(`PRAMAN Production Portal running on http://0.0.0.0:${PORT}`);
     });
   }
 }
@@ -1381,3 +1442,4 @@ async function startServer() {
 startServer().catch(err => {
   console.error('Failed to start PRAMAN server:', err);
 });
+
