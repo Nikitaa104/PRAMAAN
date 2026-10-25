@@ -1356,13 +1356,15 @@ async function startServer() {
   const isDev = process.env.NODE_ENV !== 'production';
 
   if (isDev) {
-    const { createServer: createViteServer } = await import('vite');
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: 'spa',
+    // In dev mode: Express is a pure API server on API_PORT (default 3001).
+    // The Vite dev server runs separately on port 3000 with a proxy to /api → Express.
+    const API_PORT = process.env.API_PORT ? parseInt(process.env.API_PORT, 10) : 3001;
+    app.listen(API_PORT, '0.0.0.0', () => {
+      console.log(`PRAMAN API Server (Express) running on http://0.0.0.0:${API_PORT}`);
+      console.log(`Frontend (Vite) should be started with: npx vite --port 3000`);
     });
-    app.use(vite.middlewares);
   } else {
+    // In production: serve built React app and handle API from same process.
     const distPath = path.resolve(process.cwd(), 'dist');
     if (fs.existsSync(distPath)) {
       app.use(express.static(distPath));
@@ -1370,11 +1372,10 @@ async function startServer() {
         res.sendFile(path.resolve(distPath, 'index.html'));
       });
     }
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`PRAMAN Production Server running on http://0.0.0.0:${PORT}`);
+    });
   }
-
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`PRAMAN Regulatory Scrutiny Server running on http://0.0.0.0:${PORT}`);
-  });
 }
 
 startServer().catch(err => {
