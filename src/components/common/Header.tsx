@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link, NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useNotification } from '../../context/NotificationContext';
 import { api } from '../../services/api';
@@ -9,9 +10,15 @@ import {
   Menu,
   ChevronDown,
   Building,
-  UserCircle2,
   FileCheck,
-  ExternalLink,
+  LayoutDashboard,
+  FileSpreadsheet,
+  FolderArchive,
+  ScanEye,
+  Scale,
+  FileText,
+  History,
+  Sliders,
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -23,6 +30,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   const { showNotification } = useNotification();
   const [roleMenuOpen, setRoleMenuOpen] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
+  const location = useLocation();
 
   const handleResetData = async () => {
     if (!window.confirm('Reset the PRAMAN regulatory database to the default demonstration seed state?')) {
@@ -40,9 +48,28 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
     }
   };
 
+  const navItems = [
+    { name: 'Dashboard', to: '/', icon: LayoutDashboard, exact: true },
+    { name: 'Applications', to: '/applications', icon: FileSpreadsheet },
+    { name: 'Documents', to: '/documents', icon: FolderArchive },
+    { name: 'Scrutiny Console', to: '/scrutiny', icon: ScanEye },
+    { name: 'Rules Engine', to: '/rules', icon: Scale },
+    { name: 'Verification Queue', to: '/verification', icon: ShieldCheck },
+    { name: 'Reports', to: '/reports', icon: FileText },
+    { name: 'Audit Trail', to: '/audit-trail', icon: History },
+    { name: 'Settings', to: '/settings', icon: Sliders },
+  ];
+
+  const isNavActive = (itemTo: string, exact?: boolean) => {
+    if (exact || itemTo === '/') {
+      return location.pathname === '/';
+    }
+    return location.pathname === itemTo || location.pathname.startsWith(`${itemTo}/`);
+  };
+
   return (
     <header className="bg-white border-b border-[#D6DEE8] sticky top-0 z-40">
-      {/* Top National Identity / Government Bar */}
+      {/* 1. Top National Identity / Government Bar */}
       <div className="bg-[#142B4A] text-white text-xs px-4 sm:px-6 py-1.5 border-b border-[#0d1e34] flex items-center justify-between">
         <div className="flex items-center gap-2 overflow-hidden text-ellipsis whitespace-nowrap">
           <span className="w-2 h-2 rounded-full bg-[#FF9933] inline-block shrink-0"></span>
@@ -65,28 +92,28 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
         </div>
       </div>
 
-      {/* Tricolor Identity Accent Line */}
+      {/* 2. Tricolor Identity Accent Line */}
       <div className="h-[3px] w-full flex">
         <div className="w-1/3 bg-[#FF9933]"></div>
         <div className="w-1/3 bg-white"></div>
         <div className="w-1/3 bg-[#138808]"></div>
       </div>
 
-      {/* Main Header Container */}
-      <div className="flex items-center justify-between px-4 sm:px-6 h-16 bg-white">
-        {/* Left: Mobile Toggle & Brand */}
+      {/* 3. Main Header Branding Row */}
+      <div className="flex items-center justify-between px-4 sm:px-6 h-16 bg-white border-b border-[#E5EBF2]">
+        {/* Left: Mobile Toggle & Brand Link */}
         <div className="flex items-center gap-3.5">
           <button
             onClick={onToggleSidebar}
             className="md:hidden text-[#1F2937] hover:text-[#174A8B] p-1.5 rounded border border-[#D6DEE8] hover:bg-[#F1F4F8]"
-            aria-label="Toggle navigation menu"
+            aria-label="Toggle navigation drawer"
           >
             <Menu className="w-5 h-5" />
           </button>
 
-          <div className="flex items-center gap-3">
+          <Link to="/" className="flex items-center gap-3 group">
             {/* Institutional Seal / AICTE Emblem Graphic */}
-            <div className="w-10 h-10 rounded border border-[#174A8B] bg-[#142B4A] flex flex-col items-center justify-center text-white shrink-0 shadow-xs">
+            <div className="w-10 h-10 rounded border border-[#174A8B] bg-[#142B4A] flex flex-col items-center justify-center text-white shrink-0 shadow-xs group-hover:border-[#FF9933] transition-colors">
               <span className="text-[10px] font-bold tracking-tighter text-[#FF9933]">AICTE</span>
               <FileCheck className="w-4 h-4 text-white -mt-0.5" />
             </div>
@@ -107,17 +134,17 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
                 AI-Assisted Institutional Scrutiny & Approval System (Hand-off Protocol)
               </p>
             </div>
-          </div>
+          </Link>
         </div>
 
-        {/* Right: Role Switcher & Actions */}
+        {/* Right: Actions & User Persona Switcher */}
         <div className="flex items-center gap-2.5">
           {/* Quick Demo Reset Button */}
           <button
             onClick={handleResetData}
             disabled={isResetting}
             title="Reset system records to default synthetic demo state"
-            className="hidden lg:flex items-center gap-1.5 text-xs text-[#1F2937] hover:text-[#174A8B] bg-white hover:bg-[#F1F4F8] px-3 py-1.5 rounded border border-[#D6DEE8] transition-colors disabled:opacity-50 font-medium"
+            className="hidden lg:flex items-center gap-1.5 text-xs text-[#1F2937] hover:text-[#174A8B] bg-white hover:bg-[#F1F4F8] px-3 py-1.5 rounded border border-[#D6DEE8] transition-colors disabled:opacity-50 font-semibold"
           >
             <RotateCcw className={`w-3.5 h-3.5 text-[#526174] ${isResetting ? 'animate-spin' : ''}`} />
             <span>Reset Demo Records</span>
@@ -143,9 +170,17 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
               </div>
             </button>
 
-            {/* Role Dropdown */}
+            {/* Click-outside backdrop */}
             {roleMenuOpen && (
-              <div className="absolute right-0 mt-2 w-80 bg-white border border-[#D6DEE8] rounded shadow-lg z-50 p-2 animate-in fade-in duration-100">
+              <div
+                className="fixed inset-0 z-40"
+                onClick={() => setRoleMenuOpen(false)}
+              />
+            )}
+
+            {/* Role Dropdown Menu */}
+            {roleMenuOpen && (
+              <div className="absolute right-0 mt-2 w-80 bg-white border border-[#D6DEE8] rounded shadow-xl z-50 p-2 animate-in fade-in duration-100">
                 <div className="px-3 py-2 border-b border-[#D6DEE8] bg-[#F8FAFC] rounded-t">
                   <p className="text-[11px] font-bold uppercase tracking-wider text-[#142B4A]">
                     Simulate Scrutiny Role / Persona
@@ -216,6 +251,31 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
           </div>
         </div>
       </div>
+
+      {/* 4. Primary Horizontal Top Navigation Bar (Navbar Options) */}
+      <nav className="bg-[#142B4A] border-b border-[#0d1e34] px-4 sm:px-6 overflow-x-auto shadow-xs">
+        <div className="flex items-center space-x-1 min-w-max">
+          {navItems.map(item => {
+            const Icon = item.icon;
+            const active = isNavActive(item.to, item.exact);
+            return (
+              <NavLink
+                key={item.name}
+                to={item.to}
+                end={item.exact}
+                className={`flex items-center gap-2 px-3 py-2.5 text-xs font-semibold transition-all whitespace-nowrap border-b-[3px] ${
+                  active
+                    ? 'border-[#FF9933] text-white bg-[#174A8B]'
+                    : 'border-transparent text-slate-200 hover:text-white hover:bg-[#1a375e]'
+                }`}
+              >
+                <Icon className={`w-4 h-4 ${active ? 'text-[#FF9933]' : 'text-slate-300'}`} />
+                <span>{item.name}</span>
+              </NavLink>
+            );
+          })}
+        </div>
+      </nav>
     </header>
   );
 };

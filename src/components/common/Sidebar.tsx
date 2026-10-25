@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
   LayoutDashboard,
@@ -11,8 +11,6 @@ import {
   FileText,
   History,
   Sliders,
-  Building,
-  UserCheck,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -22,9 +20,10 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const { currentUser, isAdmin, isOfficer } = useAuth();
+  const location = useLocation();
 
   const navigation = [
-    { name: 'Dashboard', to: '/', icon: LayoutDashboard },
+    { name: 'Dashboard', to: '/', icon: LayoutDashboard, exact: true },
     { name: 'Applications', to: '/applications', icon: FileSpreadsheet },
     { name: 'Document Repository', to: '/documents', icon: FolderArchive },
     { name: 'AI Scrutiny Workspace', to: '/scrutiny', icon: ScanEye },
@@ -34,6 +33,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     { name: 'Audit Trail', to: '/audit-trail', icon: History },
     { name: 'System Settings', to: '/settings', icon: Sliders },
   ];
+
+  const isNavActive = (itemTo: string, exact?: boolean) => {
+    if (exact || itemTo === '/') {
+      return location.pathname === '/';
+    }
+    return location.pathname === itemTo || location.pathname.startsWith(`${itemTo}/`);
+  };
 
   return (
     <>
@@ -46,7 +52,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       )}
 
       <aside
-        className={`fixed md:sticky top-0 md:top-[89px] left-0 z-40 w-[240px] h-screen md:h-[calc(100vh-89px)] bg-[#142B4A] text-slate-200 flex flex-col justify-between border-r border-[#0d1e34] transition-transform duration-200 ease-in-out shrink-0 ${
+        className={`fixed md:relative top-0 left-0 z-40 w-[240px] h-full bg-[#142B4A] text-slate-200 flex flex-col justify-between border-r border-[#0d1e34] transition-transform duration-200 ease-in-out shrink-0 ${
           isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
         }`}
       >
@@ -63,20 +69,20 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           <nav className="space-y-0.5 pt-1">
             {navigation.map(item => {
               const Icon = item.icon;
+              const active = isNavActive(item.to, item.exact);
               return (
                 <NavLink
                   key={item.name}
                   to={item.to}
+                  end={item.exact}
                   onClick={() => onClose && onClose()}
-                  className={({ isActive }) =>
-                    `flex items-center gap-3 px-3 py-2.5 rounded text-sm font-medium transition-colors ${
-                      isActive
-                        ? 'bg-[#174A8B] text-white font-semibold border-l-[3px] border-[#FF9933] shadow-xs'
-                        : 'text-slate-200 hover:text-white hover:bg-[#1a375e]'
-                    }`
-                  }
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded text-sm font-medium transition-colors ${
+                    active
+                      ? 'bg-[#174A8B] text-white font-semibold border-l-[3px] border-[#FF9933] shadow-xs'
+                      : 'text-slate-200 hover:text-white hover:bg-[#1a375e]'
+                  }`}
                 >
-                  <Icon className="w-[18px] h-[18px] shrink-0" />
+                  <Icon className={`w-[18px] h-[18px] shrink-0 ${active ? 'text-[#FF9933]' : 'text-slate-300'}`} />
                   <span className="truncate">{item.name}</span>
                 </NavLink>
               );

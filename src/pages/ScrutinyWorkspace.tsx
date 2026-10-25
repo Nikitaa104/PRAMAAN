@@ -71,6 +71,12 @@ export const ScrutinyWorkspace: React.FC = () => {
     });
   }, [id]);
 
+  useEffect(() => {
+    if (id && id !== selectedAppId) {
+      setSelectedAppId(id);
+    }
+  }, [id, selectedAppId]);
+
   // Load selected application details
   const loadApp = async (appId: string) => {
     setLoading(true);
