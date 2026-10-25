@@ -1,0 +1,6 @@
+{
+  "name": "PRAMAN — AI-Powered Regulatory Scrutiny & Document Verification Platform",
+  "description": "AI-Powered regulatory scrutiny, document verification, compliance validation, and anomaly detection platform for institutional applications.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
